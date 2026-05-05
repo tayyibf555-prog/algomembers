@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070503">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Algo by Excelsior · Members</title>
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 28 L16 6 L25 24 M22 18 L25 24 L19 22' fill='none' stroke='%23C9A45E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/member.css">
+</head>
+<body class="locked">
+
+  <!-- ============================================================
+       AUTH OVERLAY — login by default. Toggles to signup mode via
+       the "Create account" link. Hidden once a valid session
+       cookie is detected (admin.js probes /api/me).
+       ============================================================ -->
+  <div class="auth-screen" id="authScreen" aria-hidden="true">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <svg class="auth-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M5 28 L16 6 L25 24 M22 18 L25 24 L19 22" fill="none" stroke="#C9A45E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <div class="auth-title">Algo by Excelsior</div>
+          <div class="auth-sub" id="authSubtitle">Member sign-in</div>
+        </div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form class="auth-form" id="loginForm" novalidate>
+        <div class="auth-row">
+          <label class="auth-label" for="loginEmail">Email</label>
+          <input class="input" type="email" id="loginEmail" autocomplete="email" required>
+        </div>
+        <div class="auth-row">
+          <label class="auth-label" for="loginPass">Password</label>
+          <input class="input" type="password" id="loginPass" autocomplete="current-password" required>
+        </div>
+        <div class="auth-error" id="loginError" role="alert"></div>
+        <button type="submit" class="btn btn-primary auth-submit">Sign in →</button>
+      </form>
+
+      <!-- SIGNUP FORM (initially hidden) -->
+      <form class="auth-form" id="signupForm" novalidate hidden>
+        <div class="auth-row">
+          <label class="auth-label" for="signupName">Full name</label>
+          <input class="input" type="text" id="signupName" autocomplete="name" required>
+        </div>
+        <div class="auth-row">
+          <label class="auth-label" for="signupEmail">Email</label>
+          <input class="input" type="email" id="signupEmail" autocomplete="email" required>
+        </div>
+        <div class="auth-row">
+          <label class="auth-label" for="signupPass">Password</label>
+          <input class="input" type="password" id="signupPass" autocomplete="new-password" required minlength="6">
+          <div class="auth-hint">At least 6 characters.</div>
+        </div>
+        <div class="auth-error" id="signupError" role="alert"></div>
+        <button type="submit" class="btn btn-primary auth-submit">Create account →</button>
+        <p class="auth-finish-note">If you already paid using a specific email, sign up with that same email to pull in your records automatically. You can link other emails from your Account page later.</p>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="toggleText">No account yet?</span>
+        <button type="button" class="auth-toggle-btn" id="toggleAuthBtn">Create one →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       APP SHELL — visible after auth
+       ============================================================ -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M5 28 L16 6 L25 24 M22 18 L25 24 L19 22" fill="none" stroke="#C9A45E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="brand-name">Algo<span class="by"> by Excelsior</span></span>
+        <span class="brand-tag">Members</span>
+      </div>
+      <nav class="tabs" id="tabs" aria-label="Sections">
+        <button class="tab active" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="news">News</button>
+        <button class="tab" data-tab="announcements">Announcements</button>
+        <button class="tab" data-tab="discord">Discord</button>
+        <button class="tab" data-tab="setup">Setup</button>
+        <button class="tab" data-tab="account">Account</button>
+      </nav>
+      <div class="topbar-actions">
+        <div class="profile-chip" id="profileChip">
+          <span class="profile-avatar" id="profileAvatar">·</span>
+          <span class="profile-name" id="profileName">—</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ============== DASHBOARD ============== -->
+    <section class="panel active" id="panel-dashboard">
+      <div class="welcome-card" id="welcomeCard">
+        <div class="welcome-text">
+          <span class="label">Welcome back</span>
+          <h1 id="welcomeName">—</h1>
+          <p class="welcome-sub" id="welcomeSub">Loading your membership…</p>
+        </div>
+        <div class="welcome-status" id="welcomeStatus"></div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">System</div>
+          <div class="stat-value status-line" id="systemStatusLine">—</div>
+          <div class="stat-meta" id="systemStatusMeta">checking…</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">YTD return</div>
+          <div class="stat-value pos" id="systemYtd">—</div>
+          <div class="stat-meta">2026 to date</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Win rate</div>
+          <div class="stat-value" id="systemWin">—</div>
+          <div class="stat-meta" id="systemTrades">— trades</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Drawdown</div>
+          <div class="stat-value" id="systemDd">—</div>
+          <div class="stat-meta">max since live</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <!-- YOUR ACCOUNT BLOCK -->
+        <div class="block">
+          <div class="block-head">
+            <span class="label">Your account</span>
+            <span class="block-meta" id="memberSince">—</span>
+          </div>
+          <div class="kvs" id="dashboardSummary">
+            <div class="kv"><span class="k">Status</span><span class="v" id="kvStatus">—</span></div>
+            <div class="kv"><span class="k">Total paid</span><span class="v mono" id="kvPaid">—</span></div>
+            <div class="kv"><span class="k">Payments</span><span class="v mono" id="kvPayments">—</span></div>
+            <div class="kv"><span class="k">Upcoming calls</span><span class="v" id="kvCalls">—</span></div>
+            <div class="kv"><span class="k">Next call</span><span class="v" id="kvNextCall">—</span></div>
+          </div>
+          <div class="empty-state hidden" id="dashboardEmpty">
+            <p>We couldn't find any payment or booking history under <span class="mono" id="emptyEmail">your email</span>.</p>
+            <p class="muted">If you paid with a different email, link it from the Account tab and your history will appear here.</p>
+          </div>
+        </div>
+
+        <!-- LATEST FROM FOUNDER -->
+        <div class="block">
+          <div class="block-head">
+            <span class="label">Latest update</span>
+            <button class="link-btn" data-go="announcements">All announcements →</button>
+          </div>
+          <div id="latestAnnouncement"><div class="muted">Loading…</div></div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <!-- ACTIVITY TIMELINE -->
+        <div class="block">
+          <div class="block-head"><span class="label">Activity</span></div>
+          <div class="timeline" id="activityTimeline"><div class="muted">Loading…</div></div>
+        </div>
+
+        <!-- ONBOARDING NUDGE -->
+        <div class="block">
+          <div class="block-head">
+            <span class="label">Setup progress</span>
+            <button class="link-btn" data-go="setup">Setup tab →</button>
+          </div>
+          <div id="onboardingMini"><div class="muted">Loading…</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== NEWS ============== -->
+    <section class="panel" id="panel-news">
+      <div class="section-head">
+        <span class="label">Trading News</span>
+        <h1>Market events that matter</h1>
+        <p class="sub">Curated updates affecting Nasdaq and Gold positions. The system handles these automatically — this feed is here so you know what's happening.</p>
+      </div>
+      <div class="news-list" id="newsList"><div class="muted">Loading…</div></div>
+    </section>
+
+    <!-- ============== ANNOUNCEMENTS ============== -->
+    <section class="panel" id="panel-announcements">
+      <div class="section-head">
+        <span class="label">From the founder</span>
+        <h1>Announcements</h1>
+        <p class="sub">System updates, parameter changes, scheduled maintenance, and new features. Pinned posts stay at the top.</p>
+      </div>
+      <div class="announcement-list" id="announcementList"><div class="muted">Loading…</div></div>
+    </section>
+
+    <!-- ============== DISCORD ============== -->
+    <section class="panel" id="panel-discord">
+      <div class="section-head">
+        <span class="label">Community</span>
+        <h1>Private Discord</h1>
+        <p class="sub">Direct line to the founder, real-time market chat, and a small community of members trading the same system. Join only with your member identity.</p>
+      </div>
+      <div class="discord-card" id="discordCard">
+        <div class="discord-icon">
+          <svg viewBox="0 0 32 32" width="48" height="48" fill="currentColor"><path d="M26.5 7.6c-1.9-.9-3.9-1.5-6-1.9-.3.5-.6 1.1-.8 1.7a17 17 0 0 0-7.4 0c-.2-.6-.5-1.2-.8-1.7-2.1.4-4.2 1-6 1.9C1.7 13.4.7 19 1.2 24.6c2.3 1.7 4.6 2.7 6.9 3.4.5-.7 1-1.5 1.4-2.3-.8-.3-1.5-.7-2.2-1.1.2-.1.4-.3.5-.4 4.3 2 9 2 13.2 0 .2.1.4.3.5.4-.7.4-1.4.8-2.2 1.1.4.8.9 1.6 1.4 2.3 2.3-.7 4.6-1.7 6.9-3.4.7-6.5-1-12-3.6-17m-15.4 13.6c-1.4 0-2.6-1.3-2.6-2.9 0-1.6 1.1-2.9 2.6-2.9 1.4 0 2.6 1.3 2.6 2.9 0 1.6-1.2 2.9-2.6 2.9m9.7 0c-1.4 0-2.6-1.3-2.6-2.9 0-1.6 1.1-2.9 2.6-2.9 1.4 0 2.6 1.3 2.6 2.9 0 1.6-1.2 2.9-2.6 2.9"/></svg>
+        </div>
+        <h2>Join the members' Discord</h2>
+        <p class="discord-desc">Real-time market chat, weekly Q&amp;A, and direct access to the founder. Strictly members-only — invite link is rotated regularly.</p>
+        <a class="btn btn-primary discord-cta" id="discordJoinBtn" href="#" target="_blank" rel="noopener">Open invite →</a>
+        <p class="discord-note" id="discordNote">Discord URL not yet configured.</p>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><span class="label">Channels</span></div>
+        <ul class="discord-channels">
+          <li><span class="hash">#</span><b>announcements</b> — read-only feed of system updates</li>
+          <li><span class="hash">#</span><b>market-chat</b> — discuss what NQ and Gold are doing today</li>
+          <li><span class="hash">#</span><b>setup-help</b> — TradingView, broker, and webhook troubleshooting</li>
+          <li><span class="hash">#</span><b>weekly-qa</b> — written Q&amp;A every Friday at 17:00 GMT</li>
+          <li><span class="hash">#</span><b>off-topic</b> — community space, kept on-side by mods</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============== SETUP ============== -->
+    <section class="panel" id="panel-setup">
+      <div class="section-head">
+        <span class="label">Onboarding</span>
+        <h1>Six steps to live execution</h1>
+        <p class="sub">Tick each step as you complete it. The system isn't running on your account until all six are green.</p>
+      </div>
+      <div class="setup-progress">
+        <div class="setup-progress-track"><div class="setup-progress-fill" id="setupProgressFill"></div></div>
+        <span class="setup-progress-label" id="setupProgressLabel">0 of 6 complete</span>
+      </div>
+      <div class="setup-list" id="setupList"><div class="muted">Loading…</div></div>
+    </section>
+
+    <!-- ============== ACCOUNT ============== -->
+    <section class="panel" id="panel-account">
+      <div class="section-head">
+        <span class="label">Settings</span>
+        <h1>Account</h1>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><span class="label">Profile</span></div>
+        <div class="kvs">
+          <div class="kv"><span class="k">Name</span><span class="v" id="acctName">—</span></div>
+          <div class="kv"><span class="k">Email</span><span class="v mono" id="acctEmail">—</span></div>
+          <div class="kv"><span class="k">Member since</span><span class="v mono" id="acctSince">—</span></div>
+          <div class="kv"><span class="k">Last sign-in</span><span class="v mono" id="acctLast">—</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><span class="label">Subscription</span></div>
+        <div class="kvs">
+          <div class="kv"><span class="k">Plan</span><span class="v" id="acctPlan">—</span></div>
+          <div class="kv"><span class="k">Status</span><span class="v" id="acctStatus">—</span></div>
+          <div class="kv"><span class="k">Total paid</span><span class="v mono" id="acctTotalPaid">—</span></div>
+        </div>
+        <div class="action-row">
+          <a class="btn btn-ghost" id="billingBtn" href="#" target="_blank" rel="noopener">Manage billing →</a>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><span class="label">Security</span></div>
+        <p class="muted small">Password change is coming soon. For now, contact support if you need to reset.</p>
+        <div class="action-row">
+          <button class="btn btn-danger" id="signOutBtn">Sign out</button>
+        </div>
+      </div>
+
+      <p class="legal-note">By using this portal you accept the Risk Disclaimer and Terms of Service. Algo by Excelsior provides automated trading software, not regulated investment advice. Trading carries risk of capital loss.</p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/member.js"></script>
+</body>
+</html>
