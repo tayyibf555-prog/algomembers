@@ -140,6 +140,7 @@ body.locked .toast { display: none !important; }
   color: var(--gold);
 }
 .auth-form { display: flex; flex-direction: column; gap: 1rem; }
+.auth-form[hidden] { display: none; }
 .auth-row { display: flex; flex-direction: column; gap: 0.35rem; }
 .auth-label {
   font-family: var(--font-mono);
