@@ -238,34 +238,193 @@ async function loadPanel(name) {
 // DASHBOARD
 // ──────────────────────────────────────────────────────────────
 async function loadDashboard() {
-  // Welcome name + greeting
-  const firstName = (currentMember.name || '').split(' ')[0] || 'there';
-  $('#welcomeName').textContent = 'Hi, ' + firstName + '.';
-  $('#welcomeSub').textContent = 'Here\'s what\'s happening with your membership today.';
-
-  // System status
   try {
-    const sys = await api('/api/system-status');
-    const wrap = $('#welcomeStatus');
-    wrap.className = 'welcome-status' + (sys.open ? '' : ' closed');
-    wrap.innerHTML = '<span class="dot"></span><span>' + fmt.esc(sys.msg) + '</span>';
+    const data = await api('/api/overview');
+    paintGreeting(data);
+    paintLive(data.system);
+    paintInsight(data.insight);
+    paintPulse(data.pulse);
+    paintDrawdownHeadroom(data.drawdownHeadroom, data.system);
+    paintEquityCurve(data.equityCurve);
+    paintTodaysThree(data.todaysThree);
+  } catch (err) {
+    console.error('loadDashboard', err);
+    if (typeof toast === 'function') toast('Failed to load dashboard', 'error');
+  }
+}
 
-    $('#systemStatusLine').textContent = sys.open ? 'Live' : 'Idle';
-    $('#systemStatusMeta').textContent = sys.open
-      ? 'Last trade · ' + sys.last_trade_min_ago + ' min ago'
-      : 'System paused with markets';
-    $('#systemYtd').textContent = '+' + sys.ytd_pct + '%';
-    $('#systemWin').textContent = sys.win_rate_pct + '%';
-    $('#systemTrades').textContent = sys.trades_total.toLocaleString('en-GB') + ' trades';
-    $('#systemDd').textContent = sys.drawdown_pct + '%';
-  } catch (e) { /* ignore on load failure */ }
+function paintGreeting(data) {
+  const firstName = ((data.member && data.member.name) || (currentMember && currentMember.name) || '').split(' ')[0];
+  const h = new Date().getHours();
+  const time =
+    h < 5  ? 'Up early' :
+    h < 12 ? 'Good morning' :
+    h < 17 ? 'Good afternoon' :
+    h < 22 ? 'Good evening' : 'Late night';
+  const el = $('#ovGreeting');
+  if (el) el.textContent = firstName ? (time + ', ' + firstName + '.') : (time + '.');
+  const ctx = $('#ovContext');
+  if (ctx) {
+    const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    ctx.textContent = today + ' · everything you need from one screen.';
+  }
+}
 
-  // Personal data summary + activity timeline + onboarding mini
-  await Promise.all([
-    loadDashboardSummary(),
-    loadLatestAnnouncement(),
-    loadDashboardOnboardingMini(),
-  ]);
+function paintLive(sys) {
+  if (!sys) return;
+  const live = $('#ovLive');
+  const txt = $('#ovLiveText');
+  if (live) live.classList.toggle('closed', !sys.open);
+  if (txt) txt.textContent = sys.open ? 'Live' : 'Closed';
+}
+
+function paintInsight(insight) {
+  if (!insight) return;
+  const text = $('#insightText');
+  const action = $('#insightAction');
+  if (text) text.textContent = insight.text;
+  if (action) {
+    action.textContent = insight.actionLabel || 'Open';
+    action.dataset.targetTab = insight.actionTab || 'dashboard';
+    action.onclick = () => {
+      if (typeof setTab === 'function') setTab(insight.actionTab || 'dashboard');
+    };
+  }
+}
+
+function paintPulse(pulse) {
+  if (!pulse) return;
+  const v = $('#pulseValue');
+  if (v) v.textContent = String(pulse.score);
+  const tk = $('#pulseTakeaway');
+  if (tk) {
+    if (pulse.score >= 80)      tk.textContent = 'System running clean. All three components are at or near full strength.';
+    else if (pulse.score >= 60) tk.textContent = 'Solid. The system is healthy with room to climb on one component below.';
+    else if (pulse.score >= 40) tk.textContent = 'Mixed. Worth checking which component is dragging the score down.';
+    else                        tk.textContent = 'Pulse is low. Likely markets are closed or the system is paused.';
+  }
+  const sEl = $('#pulseSystem');
+  const wEl = $('#pulseWin');
+  const dEl = $('#pulseDd');
+  if (sEl) sEl.textContent = (pulse.system   || 0) + ' / 50';
+  if (wEl) wEl.textContent = (pulse.winRate  || 0) + ' / 30';
+  if (dEl) dEl.textContent = (pulse.drawdown || 0) + ' / 20';
+
+  const hist = (pulse.history || []).slice(-14);
+  if (!hist.length) return;
+  const W = 200, H = 36, pad = 1;
+  const max = 100;
+  const stepX = hist.length > 1 ? (W - pad * 2) / (hist.length - 1) : 0;
+  const pts = hist.map((y, i) => {
+    const x = pad + i * stepX;
+    const yy = pad + (1 - y / max) * (H - pad * 2);
+    return [x, yy];
+  });
+  const line = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const fill = line + ' L' + (W - pad).toFixed(1) + ',' + (H - pad).toFixed(1) +
+               ' L' + pad.toFixed(1) + ',' + (H - pad).toFixed(1) + ' Z';
+  const lineEl = $('#pulseSparkLine');
+  const fillEl = $('#pulseSparkFill');
+  if (lineEl) lineEl.setAttribute('d', line);
+  if (fillEl) fillEl.setAttribute('d', fill);
+}
+
+function paintDrawdownHeadroom(headroom, sys) {
+  const v = $('#ddhValue');
+  const tk = $('#ddhTakeaway');
+  if (headroom === null || headroom === undefined) {
+    if (v) v.textContent = '—';
+    if (tk) tk.textContent = 'No drawdown data available.';
+    return;
+  }
+  if (v) v.textContent = String(headroom);
+  if (tk) {
+    if (headroom >= 70) {
+      tk.textContent = 'Plenty of room. Current drawdown is well inside the configured limits.';
+    } else if (headroom >= 40) {
+      tk.textContent = 'Moderate room. The system is operating normally with sizing held steady.';
+    } else if (headroom >= 20) {
+      tk.textContent = 'Tightening. Sizing reduces automatically as drawdown widens to preserve capital.';
+    } else {
+      tk.textContent = 'Near limits. The system is in capital-preservation mode.';
+    }
+  }
+}
+
+function paintEquityCurve(curve) {
+  const lineEl = $('#equityLine');
+  const fillEl = $('#equityFill');
+  const meta = $('#ecMeta');
+  const tk = $('#ecTakeaway');
+  if (!lineEl) return;
+
+  if (!curve || !curve.length) {
+    if (lineEl) lineEl.setAttribute('d', '');
+    if (fillEl) fillEl.setAttribute('d', '');
+    if (tk) tk.textContent = 'Waiting on system data.';
+    return;
+  }
+
+  const startV = curve[0].v;
+  const endV   = curve[curve.length - 1].v;
+  const pct = startV > 0 ? ((endV - startV) / startV) * 100 : 0;
+  if (meta) meta.textContent = 'Verified · since ' +
+    new Date(curve[0].t).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  if (tk) {
+    tk.textContent = '£' + startV.toLocaleString('en-GB') + ' → £' +
+      endV.toLocaleString('en-GB') + ' (+' + pct.toFixed(1) +
+      '%) on the published strategy. Your personal account curve will appear once broker integration is connected.';
+  }
+
+  // Map points into the SVG's 800×220 canvas
+  const W = 800, H = 220, padX = 8, padY = 14;
+  const tMin = curve[0].t;
+  const tMax = curve[curve.length - 1].t;
+  const tSpan = Math.max(1, tMax - tMin);
+  const vMin = Math.min.apply(null, curve.map(p => p.v));
+  const vMax = Math.max.apply(null, curve.map(p => p.v));
+  const vSpan = Math.max(1, vMax - vMin);
+  const pts = curve.map(p => {
+    const x = padX + ((p.t - tMin) / tSpan) * (W - padX * 2);
+    const y = padY + (1 - ((p.v - vMin) / vSpan)) * (H - padY * 2);
+    return [x, y];
+  });
+  let dLine = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+  for (let i = 1; i < pts.length; i++) {
+    dLine += ' L' + pts[i][0].toFixed(1) + ',' + pts[i][1].toFixed(1);
+  }
+  const dFill = dLine + ' L' + pts[pts.length - 1][0].toFixed(1) + ',' + (H - padY).toFixed(1) +
+                ' L' + pts[0][0].toFixed(1) + ',' + (H - padY).toFixed(1) + ' Z';
+
+  lineEl.setAttribute('d', dLine);
+  if (fillEl) fillEl.setAttribute('d', dFill);
+}
+
+function paintTodaysThree(tasks) {
+  const list = $('#todoList');
+  if (!list) return;
+  if (!tasks || !tasks.length) {
+    setHTML(list, '<li class="todo-empty">No items detected.</li>');
+    return;
+  }
+  setHTML(list, tasks.map((t, i) => (
+    '<li data-target-tab="' + fmt.esc(t.tab || 'dashboard') + '">' +
+      '<span class="todo-num">' + String(i + 1).padStart(2, '0') + '</span>' +
+      '<div class="todo-text">' +
+        '<div class="todo-action">' + fmt.esc(t.action) + '</div>' +
+        '<div class="todo-evidence">' + fmt.esc(t.evidence) + '</div>' +
+      '</div>' +
+      '<svg class="todo-arrow" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' +
+        '<path d="M5 3 L11 8 L5 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>' +
+    '</li>'
+  )).join(''));
+  list.querySelectorAll('li[data-target-tab]').forEach(li => {
+    li.addEventListener('click', () => {
+      const t = li.getAttribute('data-target-tab');
+      if (t && typeof setTab === 'function') setTab(t);
+    });
+  });
 }
 
 async function loadDashboardSummary() {

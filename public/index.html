@@ -107,85 +107,120 @@
   <main class="main">
 
     <!-- ============== DASHBOARD ============== -->
+    <!-- ============================================================
+         DASHBOARD — redesigned per the dashboardUI seven principles.
+         The single screen the member reads when they sign in.
+         Insight-first; the chart proves the insight, never leads.
+         All other surfaces (News, Announcements, Discord, Setup,
+         Account) are deeper drilldowns.
+         ============================================================ -->
     <section class="panel active" id="panel-dashboard">
-      <div class="welcome-card" id="welcomeCard">
-        <div class="welcome-text">
-          <span class="label">Welcome back</span>
-          <h1 id="welcomeName">—</h1>
-          <p class="welcome-sub" id="welcomeSub">Loading your membership…</p>
+
+      <!-- Slim header — context + live indicator (principle 5: discipline) -->
+      <header class="ov-head">
+        <div class="ov-head-text">
+          <span class="label">Algo by Excelsior · Member dashboard</span>
+          <h1 id="ovGreeting">Welcome back.</h1>
+          <p class="ov-context" id="ovContext">Loading today's pulse…</p>
         </div>
-        <div class="welcome-status" id="welcomeStatus"></div>
+        <div class="ov-live" id="ovLive">
+          <span class="pulse"></span>
+          <span id="ovLiveText">Checking</span>
+        </div>
+      </header>
+
+      <!-- Principle 1: Insight-first hero card -->
+      <article class="insight-card" id="insightCard">
+        <div class="insight-icon" aria-hidden="true">
+          <svg viewBox="0 0 28 28" width="28" height="28">
+            <circle cx="14" cy="14" r="12" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M9 14 L13 18 L20 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="insight-body">
+          <span class="label">Today's signal</span>
+          <p class="insight-text" id="insightText">Reading the system…</p>
+        </div>
+        <div class="insight-actions">
+          <button class="btn btn-primary" id="insightAction" data-target-tab="dashboard">Open</button>
+        </div>
+      </article>
+
+      <!-- Principle 2: ownable metric (Algo Pulse) + supporting metric
+           (Drawdown headroom). Two-column row. Maximum 4 stat numbers
+           total — by design. -->
+      <div class="ov-metrics">
+        <article class="metric-card pulse-card" id="pulseCard">
+          <div class="metric-head">
+            <span class="label">Algo Pulse</span>
+            <span class="metric-help" title="Composite system health: 50% markets-open + system trading, 30% win rate vs baseline (75%), 20% drawdown headroom.">?</span>
+          </div>
+          <div class="metric-value-row">
+            <span class="metric-value" id="pulseValue">—</span>
+            <span class="metric-unit">/ 100</span>
+          </div>
+          <p class="metric-takeaway" id="pulseTakeaway">Composite of system status, win rate, and drawdown headroom.</p>
+          <svg class="metric-spark" id="pulseSpark" viewBox="0 0 200 36" preserveAspectRatio="none" aria-hidden="true">
+            <path id="pulseSparkLine" d="" fill="none" stroke="#C9A45E" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="pulseSparkFill" d="" fill="rgba(201,164,94,0.08)"/>
+          </svg>
+          <div class="pulse-components">
+            <div class="pc"><span class="pc-k">System</span><span class="pc-v" id="pulseSystem">—</span></div>
+            <div class="pc"><span class="pc-k">Win rate</span><span class="pc-v" id="pulseWin">—</span></div>
+            <div class="pc"><span class="pc-k">Drawdown</span><span class="pc-v" id="pulseDd">—</span></div>
+          </div>
+        </article>
+
+        <article class="metric-card support-card">
+          <div class="metric-head">
+            <span class="label">Drawdown headroom</span>
+            <span class="metric-help" title="Percent of allowed drawdown budget still available. Higher = more breathing room before the system reduces sizing.">?</span>
+          </div>
+          <div class="metric-value-row">
+            <span class="metric-value" id="ddhValue">—</span>
+            <span class="metric-unit">% of budget</span>
+          </div>
+          <p class="metric-takeaway" id="ddhTakeaway">Higher means more risk budget left before sizing is automatically reduced.</p>
+        </article>
       </div>
 
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-label">System</div>
-          <div class="stat-value status-line" id="systemStatusLine">—</div>
-          <div class="stat-meta" id="systemStatusMeta">checking…</div>
+      <!-- Principle 3: one unusual visual — the brand's signature
+           thin gold line, applied to verified strategy YTD performance.
+           Clearly labelled as "Strategy performance" so it's never
+           confused with a member's personal account. -->
+      <article class="equity-card">
+        <div class="metric-head">
+          <span class="label">Strategy performance</span>
+          <span class="ec-meta" id="ecMeta">Verified · since June 2025</span>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">YTD return</div>
-          <div class="stat-value pos" id="systemYtd">—</div>
-          <div class="stat-meta">2026 to date</div>
+        <p class="metric-takeaway" id="ecTakeaway">£10,000 baseline scaled by the published strategy YTD. Your personal account curve will appear here once broker integration is connected.</p>
+        <div class="equity-canvas">
+          <svg id="equitySvg" viewBox="0 0 800 220" preserveAspectRatio="none" aria-hidden="true">
+            <line class="ec-grid" x1="0" y1="55"  x2="800" y2="55"/>
+            <line class="ec-grid" x1="0" y1="110" x2="800" y2="110"/>
+            <line class="ec-grid" x1="0" y1="165" x2="800" y2="165"/>
+            <path id="equityFill" d="" fill="url(#memEquityGrad)" opacity="0.18"/>
+            <path id="equityLine" d="" fill="none" stroke="#C9A45E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="memEquityGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#C9A45E" stop-opacity="0.6"/>
+                <stop offset="1" stop-color="#C9A45E" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Win rate</div>
-          <div class="stat-value" id="systemWin">—</div>
-          <div class="stat-meta" id="systemTrades">— trades</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Drawdown</div>
-          <div class="stat-value" id="systemDd">—</div>
-          <div class="stat-meta">max since live</div>
-        </div>
-      </div>
+      </article>
 
-      <div class="row-2">
-        <!-- YOUR ACCOUNT BLOCK -->
-        <div class="block">
-          <div class="block-head">
-            <span class="label">Your account</span>
-            <span class="block-meta" id="memberSince">—</span>
-          </div>
-          <div class="kvs" id="dashboardSummary">
-            <div class="kv"><span class="k">Status</span><span class="v" id="kvStatus">—</span></div>
-            <div class="kv"><span class="k">Total paid</span><span class="v mono" id="kvPaid">—</span></div>
-            <div class="kv"><span class="k">Payments</span><span class="v mono" id="kvPayments">—</span></div>
-            <div class="kv"><span class="k">Upcoming calls</span><span class="v" id="kvCalls">—</span></div>
-            <div class="kv"><span class="k">Next call</span><span class="v" id="kvNextCall">—</span></div>
-          </div>
-          <div class="empty-state hidden" id="dashboardEmpty">
-            <p>We couldn't find any payment or booking history under <span class="mono" id="emptyEmail">your email</span>.</p>
-            <p class="muted">If you paid with a different email, link it from the Account tab and your history will appear here.</p>
-          </div>
+      <!-- Principle 4: Today's three things -->
+      <article class="todo-card">
+        <div class="metric-head">
+          <span class="label">Today's three things</span>
+          <span class="metric-help" title="Derived from your onboarding state, pinned announcements, and today's market context.">?</span>
         </div>
-
-        <!-- LATEST FROM FOUNDER -->
-        <div class="block">
-          <div class="block-head">
-            <span class="label">Latest update</span>
-            <button class="link-btn" data-go="announcements">All announcements →</button>
-          </div>
-          <div id="latestAnnouncement"><div class="muted">Loading…</div></div>
-        </div>
-      </div>
-
-      <div class="row-2">
-        <!-- ACTIVITY TIMELINE -->
-        <div class="block">
-          <div class="block-head"><span class="label">Activity</span></div>
-          <div class="timeline" id="activityTimeline"><div class="muted">Loading…</div></div>
-        </div>
-
-        <!-- ONBOARDING NUDGE -->
-        <div class="block">
-          <div class="block-head">
-            <span class="label">Setup progress</span>
-            <button class="link-btn" data-go="setup">Setup tab →</button>
-          </div>
-          <div id="onboardingMini"><div class="muted">Loading…</div></div>
-        </div>
-      </div>
+        <ol class="todo-list" id="todoList">
+          <li class="todo-empty">Reading the system…</li>
+        </ol>
+      </article>
     </section>
 
     <!-- ============== NEWS ============== -->
