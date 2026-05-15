@@ -616,20 +616,86 @@ function renderSetup(steps) {
   $('#setupProgressFill').style.width = Math.round(done / total * 100) + '%';
   $('#setupProgressLabel').textContent = done + ' of ' + total + ' complete';
 
-  setHTML($('#setupList'), steps.map((s, i) => (
-    '<div class="setup-item' + (s.completed ? ' done' : '') + '" data-step="' + s.key + '">' +
-      '<span class="step-num">' + String(i + 1).padStart(2, '0') + '</span>' +
-      '<div class="step-content">' +
-        '<h3>' + fmt.esc(s.title) + '</h3>' +
-        '<p>' + fmt.esc(s.detail) + '</p>' +
-      '</div>' +
-      '<button class="step-toggle" aria-label="Toggle ' + fmt.esc(s.title) + '" type="button">' +
-        '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 L7 12 L13 4"/></svg>' +
-      '</button>' +
-    '</div>'
-  )).join(''));
+  // The broker_details step renders an embedded form instead of a
+  // plain toggle row. Submitting the form saves the details to
+  // /api/broker-details and marks the step complete automatically.
+  setHTML($('#setupList'), steps.map((s, i) => {
+    if (s.key === 'broker_details') {
+      return (
+        '<div class="setup-item setup-item-form' + (s.completed ? ' done' : '') + '" data-step="' + s.key + '">' +
+          '<span class="step-num">' + String(i + 1).padStart(2, '0') + '</span>' +
+          '<div class="step-content">' +
+            '<h3>' + fmt.esc(s.title) + '</h3>' +
+            '<p>' + fmt.esc(s.detail) + '</p>' +
 
-  $$('#setupList .setup-item').forEach(item => {
+            '<form class="broker-form" id="brokerForm" novalidate>' +
+              '<div class="bf-grid">' +
+                '<div class="bf-row">' +
+                  '<label class="bf-label" for="bf-broker">Broker</label>' +
+                  '<select class="bf-input" id="bf-broker" name="broker_name" required>' +
+                    '<option value="">Select your broker…</option>' +
+                    '<option>TradeStation</option>' +
+                    '<option>Tradovate</option>' +
+                    '<option>Webull UK</option>' +
+                    '<option>Interactive Brokers</option>' +
+                    '<option>Robinhood</option>' +
+                    '<option>NinjaTrader</option>' +
+                    '<option>Apex Trader Funding</option>' +
+                    '<option>Lucid Trading</option>' +
+                    '<option>TopStep</option>' +
+                    '<option>Tradeify</option>' +
+                    '<option>Alpha Futures</option>' +
+                    '<option>Funded Next</option>' +
+                    '<option>Other</option>' +
+                  '</select>' +
+                '</div>' +
+                '<div class="bf-row">' +
+                  '<label class="bf-label" for="bf-account">Account number</label>' +
+                  '<input class="bf-input" id="bf-account" name="account_number" type="text" required autocomplete="off" placeholder="e.g. 12345678">' +
+                '</div>' +
+                '<div class="bf-row">' +
+                  '<label class="bf-label" for="bf-type">Account type</label>' +
+                  '<select class="bf-input" id="bf-type" name="account_type">' +
+                    '<option value="">—</option>' +
+                    '<option value="live">Live cash account</option>' +
+                    '<option value="prop">Prop firm account</option>' +
+                  '</select>' +
+                '</div>' +
+                '<div class="bf-row">' +
+                  '<label class="bf-label" for="bf-size">Account size <span class="bf-hint">(optional)</span></label>' +
+                  '<input class="bf-input" id="bf-size" name="account_size" type="text" autocomplete="off" placeholder="e.g. $50,000">' +
+                '</div>' +
+                '<div class="bf-row bf-row-full">' +
+                  '<label class="bf-label" for="bf-notes">Notes <span class="bf-hint">(optional)</span></label>' +
+                  '<textarea class="bf-input" id="bf-notes" name="notes" rows="3" placeholder="Anything we should know about your setup"></textarea>' +
+                '</div>' +
+              '</div>' +
+              '<div class="bf-actions">' +
+                '<span class="bf-status" id="brokerStatus" role="status"></span>' +
+                '<button type="submit" class="btn btn-primary bf-submit" id="brokerSubmit">Submit details →</button>' +
+              '</div>' +
+            '</form>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    // Default step row — plain toggle, same as before
+    return (
+      '<div class="setup-item' + (s.completed ? ' done' : '') + '" data-step="' + s.key + '">' +
+        '<span class="step-num">' + String(i + 1).padStart(2, '0') + '</span>' +
+        '<div class="step-content">' +
+          '<h3>' + fmt.esc(s.title) + '</h3>' +
+          '<p>' + fmt.esc(s.detail) + '</p>' +
+        '</div>' +
+        '<button class="step-toggle" aria-label="Toggle ' + fmt.esc(s.title) + '" type="button">' +
+          '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 L7 12 L13 4"/></svg>' +
+        '</button>' +
+      '</div>'
+    );
+  }).join(''));
+
+  // Wire toggle behaviour for every non-form step
+  $$('#setupList .setup-item:not(.setup-item-form)').forEach(item => {
     const toggle = item.querySelector('.step-toggle');
     if (!toggle) return;
     const stepKey = item.dataset.step;
@@ -642,13 +708,89 @@ function renderSetup(steps) {
           body: JSON.stringify({ step: stepKey, completed: !isDone }),
         });
         item.classList.toggle('done');
-        const newDone = $$('#setupList .setup-item.done').length;
-        $('#setupProgressFill').style.width = Math.round(newDone / total * 100) + '%';
-        $('#setupProgressLabel').textContent = newDone + ' of ' + total + ' complete';
+        refreshSetupProgress(total);
       } catch (err) {
         toast('Update failed: ' + err.message, 'error');
       }
     });
+  });
+
+  // Wire the broker-details form
+  wireBrokerForm(total);
+}
+
+function refreshSetupProgress(total) {
+  const newDone = $$('#setupList .setup-item.done').length;
+  $('#setupProgressFill').style.width = Math.round(newDone / total * 100) + '%';
+  $('#setupProgressLabel').textContent = newDone + ' of ' + total + ' complete';
+}
+
+async function wireBrokerForm(total) {
+  const form = $('#brokerForm');
+  if (!form) return;
+
+  // Pre-fill if the member has already submitted
+  try {
+    const existing = await api('/api/broker-details');
+    if (existing) {
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = String(v); };
+      set('bf-broker',  existing.broker_name);
+      set('bf-account', existing.account_number);
+      set('bf-type',    existing.account_type);
+      set('bf-size',    existing.account_size);
+      set('bf-notes',   existing.notes);
+      if (existing.submitted_at) {
+        $('#brokerStatus').textContent = 'Submitted · ' + new Date(existing.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        $('#brokerSubmit').textContent = 'Update details →';
+      }
+    }
+  } catch (_) { /* probe is best-effort */ }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const status = $('#brokerStatus');
+    const submit = $('#brokerSubmit');
+    const original = submit.textContent;
+    const payload = {
+      broker_name:    document.getElementById('bf-broker').value.trim(),
+      account_number: document.getElementById('bf-account').value.trim(),
+      account_type:   document.getElementById('bf-type').value,
+      account_size:   document.getElementById('bf-size').value.trim(),
+      notes:          document.getElementById('bf-notes').value.trim(),
+    };
+    if (!payload.broker_name || !payload.account_number) {
+      status.textContent = 'Broker and account number are required.';
+      status.classList.add('error');
+      return;
+    }
+    status.classList.remove('error');
+    submit.disabled = true;
+    submit.textContent = 'Saving…';
+    try {
+      const res = await api('/api/broker-details', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      if (res && res.ok) {
+        status.textContent = 'Saved · ' + new Date(res.saved_at || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        submit.textContent = 'Update details →';
+        // Mark the step row as done if it isn't already
+        const item = form.closest('.setup-item');
+        if (item && !item.classList.contains('done')) {
+          item.classList.add('done');
+          refreshSetupProgress(total);
+        }
+      } else {
+        status.textContent = 'Saved.';
+        submit.textContent = 'Update details →';
+      }
+    } catch (err) {
+      status.textContent = (err.message || 'Submit failed.').replace(/^4\d\d /, '');
+      status.classList.add('error');
+      submit.textContent = original;
+    } finally {
+      submit.disabled = false;
+    }
   });
 }
 

@@ -896,6 +896,83 @@ button:focus-visible, a:focus-visible, .input:focus-visible {
   .setup-item .step-num { display: none; }
 }
 
+/* The broker-details step renders an embedded form instead of a
+   plain toggle row. Toggle hides; form occupies the third column. */
+.setup-item.setup-item-form { cursor: default; }
+.setup-item.setup-item-form:hover { border-color: var(--hairline); }
+.setup-item.setup-item-form.done { background: rgba(52, 211, 153, 0.025); }
+.setup-item.setup-item-form .step-toggle { display: none; }
+.setup-item.setup-item-form { grid-template-columns: auto 1fr; }
+
+.broker-form {
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px dashed var(--hairline);
+}
+.bf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 1.15rem;
+  margin-bottom: 1.1rem;
+}
+.bf-row { display: flex; flex-direction: column; gap: 0.35rem; }
+.bf-row-full { grid-column: 1 / -1; }
+.bf-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.bf-hint {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+}
+.bf-input {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  transition: var(--transition);
+}
+.bf-input:focus {
+  outline: none;
+  border-color: var(--hairline-gold);
+  background: rgba(0, 0, 0, 0.55);
+}
+textarea.bf-input { font-family: var(--font-body); resize: vertical; min-height: 5rem; line-height: 1.5; }
+
+.bf-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.bf-status {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--positive);
+  min-height: 1em;
+}
+.bf-status.error { color: var(--negative); }
+.bf-submit { white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .bf-grid { grid-template-columns: 1fr; }
+  .bf-submit { width: 100%; }
+}
+
 /* =============================================================
    ACCOUNT
    ============================================================= */

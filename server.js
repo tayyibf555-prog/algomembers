@@ -676,6 +676,81 @@ app.patch('/api/onboarding', requireMember, async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────
+// Broker account details — submitted by the member on the Setup
+// tab. Persists per-member; the admin reads this via a LEFT JOIN
+// on /api/members. POSTing also marks the broker_details onboarding
+// step complete automatically.
+// ──────────────────────────────────────────────────────────────
+app.get('/api/broker-details', requireMember, async (req, res) => {
+  try {
+    const row = await get(
+      'SELECT broker_name, account_number, account_type, account_size, notes, submitted_at, updated_at FROM member_broker_details WHERE member_id = ?',
+      [req.member.id]
+    );
+    res.json(row || null);
+  } catch (err) {
+    console.error('GET /api/broker-details', err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+app.post('/api/broker-details', requireMember, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const broker_name    = String(body.broker_name    || '').trim().slice(0, 80);
+    const account_number = String(body.account_number || '').trim().slice(0, 80);
+    const account_type   = String(body.account_type   || '').trim().slice(0, 20);
+    const account_size   = String(body.account_size   || '').trim().slice(0, 40);
+    const notes          = String(body.notes          || '').trim().slice(0, 1000);
+
+    if (!broker_name)    return res.status(400).json({ error: 'broker name is required' });
+    if (!account_number) return res.status(400).json({ error: 'account number is required' });
+
+    const now = Date.now();
+    const existing = await get(
+      'SELECT id FROM member_broker_details WHERE member_id = ?',
+      [req.member.id]
+    );
+
+    if (existing) {
+      await run(
+        `UPDATE member_broker_details
+           SET broker_name = ?, account_number = ?, account_type = ?,
+               account_size = ?, notes = ?, updated_at = ?
+         WHERE member_id = ?`,
+        [broker_name, account_number, account_type, account_size, notes, now, req.member.id]
+      );
+    } else {
+      await run(
+        `INSERT INTO member_broker_details
+           (member_id, broker_name, account_number, account_type, account_size, notes, submitted_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [req.member.id, broker_name, account_number, account_type, account_size, notes, now, now]
+      );
+    }
+
+    // Mark the broker_details onboarding step complete in one go
+    await run(
+      'INSERT OR IGNORE INTO onboarding (member_id, updated_at) VALUES (?, ?)',
+      [req.member.id, now]
+    );
+    await run(
+      'UPDATE onboarding SET step_broker_details = 1, updated_at = ? WHERE member_id = ?',
+      [now, req.member.id]
+    );
+
+    res.json({
+      ok: true,
+      saved_at: now,
+      details: { broker_name, account_number, account_type, account_size, notes },
+    });
+  } catch (err) {
+    console.error('POST /api/broker-details', err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
 // Root → static index
 app.get('/', (req, res) => res.redirect(302, '/index.html'));
 
