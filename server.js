@@ -75,18 +75,14 @@ const SEED_NEWS = [
 ];
 
 const ONBOARDING_STEPS = [
-  { key: 'tradingview', title: 'Connect your TradingView account',
-    detail: 'Open TradingView → Profile → API webhook, generate a webhook URL, paste it into the system\'s admin panel during onboarding.' },
-  { key: 'broker', title: 'Link your broker',
-    detail: 'Most retail UK brokers support TradingView webhook orders. We walk through your specific broker on the onboarding call.' },
-  { key: 'risk', title: 'Confirm risk parameters',
-    detail: 'Verify max drawdown (default 6.5%), risk-per-trade (default 1.0%), max open positions (default 2). Tunable to your account size.' },
-  { key: 'paper', title: 'Run a paper trade',
-    detail: 'Use TradingView paper trading mode to verify alerts arrive correctly before going live.' },
-  { key: 'live', title: 'Place your first live trade',
-    detail: 'Once paper is confirmed working, switch to your live broker connection. The system handles entries, exits, stop losses, take profits.' },
-  { key: 'reports', title: 'Subscribe to weekly reports',
-    detail: 'Confirm your email is registered for weekly performance reports — they arrive every Sunday at 18:00 GMT.' },
+  { key: 'broker_details', title: 'Client broker account details',
+    detail: 'Provide your broker account number and the credentials we need to connect your account. We walk through which fields are required on the onboarding call.' },
+  { key: 'traderpost', title: 'Link broker connection via TraderPost',
+    detail: 'TraderPost is the cloud bridge between TradingView signals and your broker. We set up the connection together so credentials never leave your control.' },
+  { key: 'subscription', title: 'Create client subscription',
+    detail: 'Set up your cloud automation subscription. One subscription covers a single connected account; additional accounts can be added afterwards.' },
+  { key: 'strategy_link', title: 'Link subscription to the algo strategy',
+    detail: 'The final wiring step. Once linked, your account starts receiving and executing the strategy\'s signals automatically.' },
 ];
 
 let _seedPromise = null;
@@ -344,12 +340,10 @@ function marketStatus() {
 //   - todaysThree:  1-3 concrete actions for the member today
 // ──────────────────────────────────────────────────────────────
 const ONBOARDING_STEPS_LIST = [
-  { key: 'tradingview', label: 'Connect your TradingView account' },
-  { key: 'broker',      label: 'Link your broker' },
-  { key: 'risk',        label: 'Confirm risk parameters' },
-  { key: 'paper',       label: 'Run a paper trade' },
-  { key: 'live',        label: 'Place your first live trade' },
-  { key: 'reports',     label: 'Subscribe to weekly reports' },
+  { key: 'broker_details', label: 'Client broker account details' },
+  { key: 'traderpost',     label: 'Link broker connection via TraderPost' },
+  { key: 'subscription',   label: 'Create client subscription' },
+  { key: 'strategy_link',  label: 'Link subscription to the algo strategy' },
 ];
 
 const ALGO_PULSE_BASELINE = {
