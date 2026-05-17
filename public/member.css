@@ -196,6 +196,12 @@ body.locked .toast { display: none !important; }
   align-items: baseline;
   flex-wrap: wrap;
 }
+/* Sign-in-only mode (from the marketing-site link): hide the
+   "No account yet? Create one →" toggle so the visitor can only
+   sign in. JS in member.js also short-circuits the toggle button's
+   click handler as a belt-and-braces guard. */
+body.signin-only .auth-toggle { display: none; }
+body.signin-only #signupForm { display: none !important; }
 .auth-toggle-btn {
   color: var(--gold);
   font-weight: 600;

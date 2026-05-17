@@ -145,8 +145,21 @@ function onAuthSuccess(member) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Toggle login/signup
+  // Sign-in-only mode (visitor arrived via the marketing site).
+  // When the URL has ?signin in it, lock the auth overlay to the
+  // sign-in form: hide the "Create one →" toggle via the body class
+  // and disable the click handler so the form can't be flipped to
+  // signup. The /api/signup endpoint itself stays open in case other
+  // entry paths (admin scripts, dev) need it.
+  const signinOnly = (() => {
+    try { return new URLSearchParams(location.search).has('signin'); }
+    catch (_) { return false; }
+  })();
+  if (signinOnly) document.body.classList.add('signin-only');
+
+  // Toggle login/signup (no-op when in sign-in-only mode)
   $('#toggleAuthBtn').addEventListener('click', () => {
+    if (document.body.classList.contains('signin-only')) return;
     setAuthMode(authMode === 'login' ? 'signup' : 'login');
   });
 
