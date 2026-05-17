@@ -123,6 +123,25 @@ function hideAuth() {
 // Boot
 // ──────────────────────────────────────────────────────────────
 async function boot() {
+  // ?signin in the URL means the visitor arrived via the marketing
+  // site's sign-in link — force a fresh sign-in even if a valid
+  // session cookie exists. Clear the cookie via /api/logout, then
+  // show the auth screen. We keep ?signin in the URL so refreshing
+  // preserves the lock; the session is single-use and a new sign-in
+  // is required regardless of how the visitor got here.
+  let forceSignin = false;
+  try {
+    forceSignin = new URLSearchParams(location.search).has('signin');
+  } catch (_) {}
+
+  if (forceSignin) {
+    try {
+      await api('/api/logout', { method: 'POST', allowUnauth: true });
+    } catch (_) { /* best-effort — cookie may already be unset */ }
+    showAuth('');
+    return;
+  }
+
   try {
     const me = await api('/api/me', { allowUnauth: true });
     onAuthSuccess(me);
